@@ -5,6 +5,9 @@
 --
 -- You can write comments in this file by starting them with two dashes, like
 -- these lines here.
+
+DROP DATABASE IF EXISTS tournament;
+
 create database tournament;
 
 \c tournament;
@@ -26,8 +29,8 @@ Insert into players(name) values ('user6');
 
 CREATE TABLE matches (
 	id serial primary key,
-	winner integer,
-	loser integer,
+	winner integer references players,
+	loser integer references players,
 	time timestamptz default CURRENT_TIMESTAMP
 ) ;
 
@@ -41,7 +44,7 @@ insert into matches(winner,loser) values (1,5);
 
 -- perfect example for outer left join multiple tables
 create view playerstanding as
-	select p.id as id, p.name as name, count(m1.winner) as wins, count(m2.loser) as loses, count(m1.winner) + count(m2.loser) as total, 
+	select p.id as id, p.name as name, count(m1.winner) as wins, count(m2.loser) as loses, count(m1.winner) + count(m2.loser) as total
 	from 
 		players p 
 		left join matches m1 on p.id = m1.winner
