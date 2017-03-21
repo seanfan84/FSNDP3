@@ -3,64 +3,64 @@
 #
 
 import psycopg2
+from functools import wraps
 
 
-def connect():
-    """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+def con(fun2bdecorated):
+    @wraps(fun2bdecorated)
+    def decoratedFunction(*args, **kwargs):
+        conn = psycopg2.connect("dbname=tournament")
+        cursor = conn.cursor()
+        result = fun2bdecorated(*args, conn=conn, cursor=cursor)
+        conn.close()
+        return result
+    return decoratedFunction
 
 
-def deleteMatches():
+@con
+def deleteMatches(conn, cursor):
     """Remove all the match records from the database."""
-    conn = connect()
-    cursor = conn.cursor()
+    # print "Deleting matches"
     cursor.execute(
         "delete from matches"
     )
     conn.commit()
-    conn.close()
 
 
-def deletePlayers():
+@con
+def deletePlayers(conn, cursor):
     """Remove all the player records from the database."""
-    conn = connect()
-    cursor = conn.cursor()
     cursor.execute(
         "delete from players"
     )
     conn.commit()
-    conn.close()
 
 
-def countPlayers():
+@con
+def countPlayers(conn, cursor):
     """Returns the number of players currently registered."""
-    conn = connect()
-    cursor = conn.cursor()
     cursor.execute(
         "select count(*) from players"
     )
-    count = cursor.fetchone()[0]
-    conn.close()
-    return count
+    return cursor.fetchone()[0]
 
 
-def registerPlayer(name):
+@con
+def registerPlayer(name, conn, cursor):
     """Adds a player to the tournament database.
     The database assigns a unique serial id number for the player.  (This
     should be handled by your SQL database schema, not in your Python code.)
     Args:
       name: the player's full name (need not be unique).
     """
-    conn = connect()
-    cursor = conn.cursor()
     cursor.execute(
         "insert into players(name) values (%s);", (name,)
     )
     conn.commit()
-    conn.close()
 
 
-def playerStandings():
+@con
+def playerStandings(conn, cursor):
     """Returns a list of the players and their win records, sorted by wins.
     The first entry in the list should be the player in first place, or a
     player tied for first place if there is currently a tie.
@@ -72,8 +72,6 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    conn = connect()
-    cursor = conn.cursor()
     cursor.execute(
         "select p.id as id, p.name as name, count(m1.winner) as wins, \
         count(m1.winner) + count(m2.loser) as total \
@@ -83,12 +81,11 @@ def playerStandings():
         group by p.id \
         order by wins desc;"
     )
-    result = cursor.fetchall()
-    conn.close()
-    return result
+    return cursor.fetchall()
 
 
-def reportMatch(winner, loser):
+@con
+def reportMatch(winner, loser, conn, cursor):
     """Records the outcome of a single match between two players.
 
     Args:
@@ -96,18 +93,15 @@ def reportMatch(winner, loser):
       loser:  the id number of the player who lost
 
     """
-    conn = connect()
-    cursor = conn.cursor()
     cursor.execute(
         "insert into matches(winner,loser) values (\
         %s,%s);", (winner, loser,)
     )
     conn.commit()
-    conn.close()
-    # mutiple escape?
 
 
-def swissPairings():
+@con
+def swissPairings(conn, cursor):
     """Returns a list of pairs of players for the next round of a match.
 
     Assuming that there are an even number of players registered, each player
@@ -122,11 +116,7 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    conn = connect()
-    cursor = conn.cursor()
     cursor.execute(
         "select * from pairing;"
     )
-    result = cursor.fetchall()
-    conn.close()
-    return result
+    return cursor.fetchall()
