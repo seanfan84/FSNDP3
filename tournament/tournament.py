@@ -19,29 +19,26 @@ def con(fun2bdecorated):
 
 @con
 def deleteMatches(conn, cursor):
-    """Remove all the match records from the database."""
+    """Remove all the match records FROM the database."""
     # print "Deleting matches"
-    cursor.execute(
-        "delete from matches"
-    )
+    query = "DELETE FROM matches"
+    cursor.execute(query)
     conn.commit()
 
 
 @con
 def deletePlayers(conn, cursor):
-    """Remove all the player records from the database."""
-    cursor.execute(
-        "delete from players"
-    )
+    """Remove all the player records FROM the database."""
+    query = "DELETE FROM players"
+    cursor.execute(query)
     conn.commit()
 
 
 @con
 def countPlayers(conn, cursor):
     """Returns the number of players currently registered."""
-    cursor.execute(
-        "select count(*) from players"
-    )
+    query = "SELECT COUNT(*) FROM players"
+    cursor.execute(query)
     return cursor.fetchone()[0]
 
 
@@ -53,9 +50,9 @@ def registerPlayer(name, conn, cursor):
     Args:
       name: the player's full name (need not be unique).
     """
-    cursor.execute(
-        "insert into players(name) values (%s);", (name,)
-    )
+    query = "INSERT INTO players(name) VALUES (%s);"
+    parameters = (name,)
+    cursor.execute(query, parameters)
     conn.commit()
 
 
@@ -72,15 +69,15 @@ def playerStandings(conn, cursor):
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    cursor.execute(
-        "select p.id as id, p.name as name, count(m1.winner) as wins, \
-        count(m1.winner) + count(m2.loser) as total \
-        from players p \
-        left join matches m1 on p.id = m1.winner \
-        left join matches m2 on p.id = m2.loser \
-        group by p.id \
-        order by wins desc;"
-    )
+    query = """SELECT p.id AS id, p.name AS name, COUNT(m1.winner) AS wins,
+            COUNT(m1.winner) + COUNT(m2.loser) AS total
+            FROM players p
+            LEFT JOIN matches m1 ON p.id = m1.winner
+            LEFT JOIN matches m2 ON p.id = m2.loser
+            GROUP BY p.id
+            ORDER BY wins DESC;"""
+
+    cursor.execute(query)
     return cursor.fetchall()
 
 
@@ -93,10 +90,9 @@ def reportMatch(winner, loser, conn, cursor):
       loser:  the id number of the player who lost
 
     """
-    cursor.execute(
-        "insert into matches(winner,loser) values (\
-        %s,%s);", (winner, loser,)
-    )
+    query = "INSERT INTO matches(winner,loser) VALUES (%s,%s);"
+    parameters = (winner, loser,)
+    cursor.execute(query, parameters)
     conn.commit()
 
 
@@ -116,7 +112,6 @@ def swissPairings(conn, cursor):
         id2: the second player's unique id
         name2: the second player's name
     """
-    cursor.execute(
-        "select * from pairing;"
-    )
+    query = "SELECT * FROM pairing;"
+    cursor.execute(query)
     return cursor.fetchall()
