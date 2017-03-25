@@ -20,8 +20,8 @@ def con(fun2bdecorated):
 @con
 def deleteMatches(conn, cursor):
     """Remove all the match records FROM the database."""
-    # print "Deleting matches"
-    query = "DELETE FROM matches"
+    # query = "DELETE FROM matches"
+    query = "TRUNCATE matches CASCADE"
     cursor.execute(query)
     conn.commit()
 
@@ -29,7 +29,8 @@ def deleteMatches(conn, cursor):
 @con
 def deletePlayers(conn, cursor):
     """Remove all the player records FROM the database."""
-    query = "DELETE FROM players"
+    # query = "DELETE FROM players"
+    query = "TRUNCATE players CASCADE"
     cursor.execute(query)
     conn.commit()
 
@@ -69,13 +70,15 @@ def playerStandings(conn, cursor):
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    query = """SELECT p.id AS id, p.name AS name, COUNT(m1.winner) AS wins,
+    query = """
+            SELECT p.id AS id, p.name AS name, COUNT(m1.winner) AS wins,
             COUNT(m1.winner) + COUNT(m2.loser) AS total
             FROM players p
             LEFT JOIN matches m1 ON p.id = m1.winner
             LEFT JOIN matches m2 ON p.id = m2.loser
             GROUP BY p.id
-            ORDER BY wins DESC;"""
+            ORDER BY wins DESC;
+            """
 
     cursor.execute(query)
     return cursor.fetchall()
